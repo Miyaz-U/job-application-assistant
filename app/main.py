@@ -1,6 +1,7 @@
 """
 FastAPI entrypoint for the Job Application Assistant.
 """
+import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from app.config import settings
@@ -14,9 +15,13 @@ from app.utils import extract_text_from_pdf
 
 app = FastAPI(title="Job Application Assistant", version="0.1.0")
 
+allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:5173"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite's default dev port
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

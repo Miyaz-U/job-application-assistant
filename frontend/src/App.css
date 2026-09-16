@@ -51,6 +51,10 @@
   .desk {
     grid-template-columns: 1fr;
   }
+  .form-card {
+    position: static;
+    transform: none;
+  }
 }
 
 /* ---------- Form card (paper) ---------- */
@@ -228,6 +232,12 @@
   }
 }
 
+.score-gauge {
+  width: min(200px, 100%);
+  height: auto;
+  flex-shrink: 0;
+}
+
 .gauge-number {
   font-family: var(--display);
   font-size: 40px;
@@ -368,4 +378,54 @@
   margin-top: 7px;
   border-radius: 1px;
   background: var(--moss);
+}
+
+/* ---------- Small phones ---------- */
+
+@media (max-width: 480px) {
+  .page {
+    padding: 28px 16px 56px;
+  }
+
+  .masthead {
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+
+  .masthead h1 {
+    font-size: 24px;
+  }
+
+  .masthead p {
+    font-size: 14px;
+  }
+
+  .desk {
+    gap: 24px;
+  }
+
+  .form-card {
+    padding: 22px 18px;
+    border-radius: 3px 10px 3px 10px;
+  }
+
+  .field textarea {
+    min-height: 140px;
+  }
+
+  .dropzone {
+    flex-wrap: wrap;
+  }
+
+  .empty-state {
+    padding: 36px 18px;
+  }
+
+  .letter-card {
+    padding: 26px 20px;
+  }
+
+  .score-row {
+    gap: 20px;
+  }
 }

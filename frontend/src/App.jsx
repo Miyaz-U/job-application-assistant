@@ -14,7 +14,14 @@ function ScoreGauge({ score }) {
   const needleY = 100 - 62 * Math.sin(rad);
 
   return (
-    <svg width="200" height="118" viewBox="0 0 200 118" role="img" aria-label={`Match score ${clamped} out of 100`}>
+    <svg
+      className="score-gauge"
+      width="200"
+      height="118"
+      viewBox="0 0 200 118"
+      role="img"
+      aria-label={`Match score ${clamped} out of 100`}
+    >
       <path
         d="M 20 100 A 80 80 0 0 1 180 100"
         fill="none"

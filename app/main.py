@@ -3,6 +3,7 @@ FastAPI entrypoint for the Job Application Assistant.
 """
 import os
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from app.config import settings
 from app.agents.jd_parser import parse_job_description
@@ -25,6 +26,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all for anything not raised as HTTPException/ValueError below —
+    e.g. transient errors from the Gemini API (503 UNAVAILABLE on high
+    demand, timeouts, etc). Without this, an unhandled exception is
+    turned into a bare 500 by Starlette's outermost error handler, which
+    sits OUTSIDE CORSMiddleware and so never gets an
+    Access-Control-Allow-Origin header attached — the browser then
+    reports it as a CORS failure instead of the real server error.
+    Handling it here keeps the response inside FastAPI's normal
+    exception-handling path so CORS headers are still applied.
+    """
+    return JSONResponse(
+        status_code=502,
+        content={
+            "detail": "The AI service is temporarily unavailable (it may be under high demand). Please try again in a moment."
+        },
+    )
 
 
 @app.on_event("startup")

@@ -4,7 +4,7 @@ Keeping these in one place means every agent speaks the
 same "language" when passing data to the next one.
 """
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 
 class EducationEntry(BaseModel):
@@ -73,4 +73,22 @@ class ApplicationDraft(BaseModel):
     key_talking_points: List[str] = Field(
         default_factory=list,
         description="Points to emphasize in an interview for this role"
+    )
+
+
+class CritiqueResult(BaseModel):
+    """Output of the Critic Agent's review of an ApplicationDraft."""
+    verdict: Literal["pass", "revise"] = Field(
+        default="pass",
+        description="'pass' if the draft is honest, well-grounded, and ready to send; "
+                    "'revise' if it has problems the Drafting Agent should fix"
+    )
+    issues: List[str] = Field(
+        default_factory=list,
+        description="Specific problems found (empty if verdict is 'pass')"
+    )
+    feedback: str = Field(
+        default="",
+        description="Actionable instructions for the Drafting Agent to fix the issues "
+                    "on its next attempt (empty if verdict is 'pass')"
     )

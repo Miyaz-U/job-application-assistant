@@ -44,3 +44,31 @@ def test_match_resume_success(mocker):
 def test_match_resume_empty_resume_raises():
     with pytest.raises(ValueError, match="cannot be empty"):
         resume_matcher.match_resume_to_job(_sample_job_requirements(), "")
+
+
+def test_match_resume_includes_structured_profile_when_given(mocker):
+    from app.schemas import ResumeProfile
+
+    fake_json = json.dumps({
+        "matched_skills": ["Node.js"],
+        "missing_skills": ["MongoDB"],
+        "matched_qualifications": [],
+        "missing_qualifications": [],
+        "strengths": [],
+        "gap_summary": "",
+        "match_score": 60,
+    })
+
+    mock_generate = mocker.patch.object(
+        resume_matcher._client.models,
+        "generate_content",
+        return_value=FakeResponse(fake_json),
+    )
+
+    profile = ResumeProfile(name="Jordan", skills=["Node.js", "React"])
+    resume_matcher.match_resume_to_job(
+        _sample_job_requirements(), "Resume text mentioning Node.js", resume_profile=profile
+    )
+
+    sent_contents = mock_generate.call_args.kwargs["contents"]
+    assert any("Structured Resume Profile" in c for c in sent_contents)

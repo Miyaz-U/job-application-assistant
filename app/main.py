@@ -122,8 +122,11 @@ def generate_application(request: DraftRequest):
         )
         return {
             "job_requirements": result.job_requirements.model_dump(),
+            "resume_profile": result.resume_profile.model_dump(),
             "match_result": result.skill_match.model_dump(),
             "application_draft": result.application_draft.model_dump(),
+            "critique": result.critique.model_dump(),
+            "revision_count": result.revision_count,
             "guardrail_warnings": result.guardrail_warnings,
         }
     except GuardrailError as e:
@@ -144,8 +147,11 @@ async def generate_application_upload(
         result = run_pipeline(job_description, resume_text, candidate_name)
         return {
             "job_requirements": result.job_requirements.model_dump(),
+            "resume_profile": result.resume_profile.model_dump(),
             "match_result": result.skill_match.model_dump(),
             "application_draft": result.application_draft.model_dump(),
+            "critique": result.critique.model_dump(),
+            "revision_count": result.revision_count,
             "guardrail_warnings": result.guardrail_warnings,
         }
     except GuardrailError as e:

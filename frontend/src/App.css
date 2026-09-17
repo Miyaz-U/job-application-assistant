@@ -182,6 +182,28 @@
   line-height: 1.5;
 }
 
+.revision-note {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-cream-soft);
+}
+
+.review-banner {
+  margin: 10px 0 24px;
+  background: #f4e4d3;
+  border-left: 3px solid var(--ochre-deep);
+  color: #5a3a17;
+  font-size: 13px;
+  padding: 11px 13px;
+  border-radius: 2px;
+  line-height: 1.5;
+}
+
+.review-banner ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
 /* ---------- Results column ---------- */
 
 .results {

@@ -200,10 +200,29 @@ export default function App() {
                 </div>
               </div>
 
-              <p className="letter-heading">Draft cover letter</p>
+              <p className="letter-heading">
+                Draft cover letter
+                {result.revision_count > 0 && (
+                  <span className="revision-note">
+                    {" "}
+                    · refined {result.revision_count} {result.revision_count === 1 ? "time" : "times"} by an automatic reviewer
+                  </span>
+                )}
+              </p>
               <div className="letter-card">
                 <p className="letter-body">{result.application_draft.cover_letter}</p>
               </div>
+
+              {result.guardrail_warnings.length > 0 && (
+                <div className="review-banner">
+                  <strong>Give this a look before sending:</strong>
+                  <ul>
+                    {result.guardrail_warnings.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="list-block">
                 <h3>Sharpen your resume</h3>

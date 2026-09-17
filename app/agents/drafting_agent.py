@@ -40,6 +40,11 @@ matching exactly this shape:
 Important: Be honest. Do not fabricate experience or skills the candidate
 doesn't have. If there are gaps, the cover letter should focus on genuine
 strengths and transferable experience rather than pretending the gap doesn't exist.
+
+If the context below includes a "revision_feedback" field, you are being
+asked to fix a specific previous attempt (included as "previous_draft").
+Address every point in the feedback directly - don't just lightly rephrase
+the same issues. Keep whatever was already working well.
 """
 
 
@@ -54,9 +59,14 @@ def draft_application(
     job_requirements: JobRequirements,
     skill_match: SkillMatch,
     candidate_name: str = "",
+    revision_feedback: str = "",
+    previous_draft: ApplicationDraft | None = None,
 ) -> ApplicationDraft:
     """
     Generates a tailored cover letter and resume recommendations.
+
+    Pass `revision_feedback` (from the Critic Agent) and `previous_draft`
+    together to ask for a targeted revision instead of a fresh first draft.
 
     Raises:
         ValueError: if model output is invalid or can't be parsed.
@@ -66,6 +76,10 @@ def draft_application(
         "skill_match": skill_match.model_dump(),
         "candidate_name": candidate_name or "the candidate",
     }
+    if revision_feedback:
+        context["revision_feedback"] = revision_feedback
+        if previous_draft is not None:
+            context["previous_draft"] = previous_draft.model_dump()
 
     response = call_with_retry(
         lambda: _client.models.generate_content(

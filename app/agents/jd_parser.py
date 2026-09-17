@@ -11,6 +11,7 @@ import re
 from google import genai
 from app.config import settings
 from app.schemas import JobRequirements
+from app.guardrails import sanitize_jd, wrap_untrusted
 
 _client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 
@@ -50,15 +51,21 @@ def parse_job_description(jd_text: str) -> JobRequirements:
     Parses a raw job description into structured requirements.
 
     Raises:
-        ValueError: if jd_text is empty or the model output can't
-                    be parsed/validated.
+        GuardrailError (a ValueError subclass): if jd_text is empty,
+                    too long, or fails another input guardrail.
+        ValueError: if the model output can't be parsed/validated.
     """
-    if not jd_text or not jd_text.strip():
-        raise ValueError("Job description text cannot be empty.")
+    sanitized = sanitize_jd(jd_text)  # raises InputEmptyError / InputTooLongError
+    if sanitized.flagged:
+        # Don't block on a heuristic match alone - log it and rely on
+        # wrap_untrusted() below to actually neutralize it. Flip this
+        # to a hard `raise PromptInjectionSuspected(...)` if you'd
+        # rather fail closed on suspected injection attempts.
+        print(f"[guardrails] jd_parser: suspicious pattern(s) flagged: {sanitized.flagged_reason}")
 
     response = _client.models.generate_content(
         model="gemini-3.5-flash-lite",
-        contents=[_SYSTEM_PROMPT, f"Job Description:\n{jd_text}"],
+        contents=[_SYSTEM_PROMPT, wrap_untrusted(sanitized.text, "JOB DESCRIPTION")],
     )
 
     raw_output = _strip_json_fences(response.text)

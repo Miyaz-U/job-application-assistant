@@ -2,8 +2,7 @@
 FastAPI entrypoint for the Job Application Assistant.
 """
 import os
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from app.config import settings
 from app.agents.jd_parser import parse_job_description
@@ -13,6 +12,7 @@ from app.orchestrator import run_pipeline
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File, Form
 from app.utils import extract_text_from_pdf
+from app.guardrails import GuardrailError
 
 app = FastAPI(title="Job Application Assistant", version="0.1.0")
 
@@ -26,26 +26,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
-    """
-    Catch-all for anything not raised as HTTPException/ValueError below —
-    e.g. transient errors from the Gemini API (503 UNAVAILABLE on high
-    demand, timeouts, etc). Without this, an unhandled exception is
-    turned into a bare 500 by Starlette's outermost error handler, which
-    sits OUTSIDE CORSMiddleware and so never gets an
-    Access-Control-Allow-Origin header attached — the browser then
-    reports it as a CORS failure instead of the real server error.
-    Handling it here keeps the response inside FastAPI's normal
-    exception-handling path so CORS headers are still applied.
-    """
-    return JSONResponse(
-        status_code=502,
-        content={
-            "detail": "The AI service is temporarily unavailable (it may be under high demand). Please try again in a moment."
-        },
-    )
 
 
 @app.on_event("startup")
@@ -68,6 +48,8 @@ def parse_jd(request: JDRequest):
     try:
         result = parse_job_description(request.job_description)
         return result.model_dump()
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -82,6 +64,8 @@ def parse_resume_endpoint(request: ResumeTextRequest):
     try:
         result = parse_resume(request.resume_text)
         return result.model_dump()
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -94,6 +78,8 @@ async def parse_resume_upload(resume_file: UploadFile = File(...)):
         resume_text = extract_text_from_pdf(pdf_bytes)
         result = parse_resume(resume_text)
         return result.model_dump()
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -113,6 +99,8 @@ def match_resume(request: MatchRequest):
             "job_requirements": job_requirements.model_dump(),
             "match_result": match_result.model_dump(),
         }
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -136,7 +124,10 @@ def generate_application(request: DraftRequest):
             "job_requirements": result.job_requirements.model_dump(),
             "match_result": result.skill_match.model_dump(),
             "application_draft": result.application_draft.model_dump(),
+            "guardrail_warnings": result.guardrail_warnings,
         }
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -155,6 +146,9 @@ async def generate_application_upload(
             "job_requirements": result.job_requirements.model_dump(),
             "match_result": result.skill_match.model_dump(),
             "application_draft": result.application_draft.model_dump(),
+            "guardrail_warnings": result.guardrail_warnings,
         }
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
